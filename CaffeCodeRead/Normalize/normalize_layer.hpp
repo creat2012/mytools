@@ -38,10 +38,12 @@ class NormalizeLayer : public Layer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
+  // x[i] = x[i] / ( 1 / sum(x[i]^2) )  
+  // x[i]( 1 <= i <= channels ) is the all channels for every pix
   Blob<Dtype> norm_; //  store the middle answer 
   Blob<Dtype> sum_channel_multiplier_, sum_spatial_multiplier_; // help for the compute
   Blob<Dtype> buffer_, buffer_channel_, buffer_spatial_;  // buffer the data process
-  bool across_spatial_; // all channels * height * width , or channels
+  bool across_spatial_; // norm  for all channels * height * width , or channels
   bool channel_shared_; // the result mult scale for same or not
   Dtype eps_;  // avoid overflow
 };

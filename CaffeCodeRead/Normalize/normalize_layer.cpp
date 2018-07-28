@@ -134,8 +134,11 @@ void NormalizeLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     }
     // scale the output
     if (channel_shared_) {
+      // channel_shared_ == true, than, for every pix, you must mult the same scale
       caffe_scal<Dtype>(dim, scale[0], top_data);
     } else {
+      // channel_shared_ == false
+
       caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, channels, spatial_dim,
                             1, Dtype(1), scale, sum_spatial_multiplier,
                             Dtype(0),
