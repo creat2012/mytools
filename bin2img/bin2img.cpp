@@ -8,7 +8,7 @@ using namespace cv;
 
 const int height = 200; // image 's height
 const int width = 200;  // image 's width
-const int nums = 1; // images 
+const int nums = 2; // images 
 int main()
 {
 

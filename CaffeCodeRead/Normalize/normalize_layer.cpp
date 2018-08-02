@@ -138,7 +138,9 @@ void NormalizeLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       caffe_scal<Dtype>(dim, scale[0], top_data);
     } else {
       // channel_shared_ == false
-
+      // note spatial_dim = height * width.
+      // buffer_data = 
+      // scales is for some feature map
       caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, channels, spatial_dim,
                             1, Dtype(1), scale, sum_spatial_multiplier,
                             Dtype(0),

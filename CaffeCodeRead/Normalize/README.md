@@ -10,5 +10,5 @@ bool channel_shared_; // the result mult scale for same or not
 if channel_shared_ == True:
 scales[i] is same for all channels * width * heigth
 else :
-scales[i] is same for all channels of every pix
-
+// wrong :scales[i] is same for all channels of every pix
+scales[i] is same for every channel, so the up is wrong..!
