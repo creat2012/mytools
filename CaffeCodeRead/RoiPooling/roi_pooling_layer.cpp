@@ -19,67 +19,75 @@ namespace caffe {
 template <typename Dtype>
 void ROIPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-  ROIPoolingParameter roi_pool_param = this->layer_param_.roi_pooling_param(); // get the params
+  //  get this layer's paramters 
+  ROIPoolingParameter roi_pool_param = this->layer_param_.roi_pooling_param();
+  // the pooled_h , pooled_w  > 0
   CHECK_GT(roi_pool_param.pooled_h(), 0)
       << "pooled_h must be > 0";
   CHECK_GT(roi_pool_param.pooled_w(), 0)
       << "pooled_w must be > 0";
-  pooled_height_ = roi_pool_param.pooled_h(); // after the height of the layer
-  pooled_width_ = roi_pool_param.pooled_w();  // after the wifth of ..
-  spatial_scale_ = roi_pool_param.spatial_scale(); // 输入图片与该层输入feature map的比值
-  LOG(INFO) << "Spatial scale: " << spatial_scale_; // 这个东西不是应该是算出来的吗?????????
+  // get the pooled_h , pooled_w, and spatial_scale
+  pooled_height_ = roi_pool_param.pooled_h();
+  pooled_width_ = roi_pool_param.pooled_w();
+  spatial_scale_ = roi_pool_param.spatial_scale();
+  LOG(INFO) << "Spatial scale: " << spatial_scale_;
 }
 
 template <typename Dtype>
 void ROIPoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+  // get channels_, height_, width_
   channels_ = bottom[0]->channels();
   height_ = bottom[0]->height();
   width_ = bottom[0]->width();
-  top[0]->Reshape(bottom[1]->num(), channels_, pooled_height_,  // so , the channels  and the num is not changed
-      pooled_width_);  // top reshape
+  // reshape the top and max_idx
+  top[0]->Reshape(bottom[1]->num(), channels_, pooled_height_,
+      pooled_width_);
   max_idx_.Reshape(bottom[1]->num(), channels_, pooled_height_,
-      pooled_width_); // max_idx_'s shape == top's shape
+      pooled_width_);
 }
-// 所以，这个roi是基于feature map 来生成的？
-// 所以   spatial_scale_ 是个萨满东西
+
 template <typename Dtype>
 void ROIPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data(); // read only
+  // get the bottom_data  and roi
+  const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bottom_rois = bottom[1]->cpu_data();
-  // Number of ROIs
+  // Number of ROIs and the batch_size
   int num_rois = bottom[1]->num();
-  // number of image
   int batch_size = bottom[0]->num();
-  int top_count = top[0]->count(); // top.count = top.num * top.height * top.width * top.channels
+  int top_count = top[0]->count();
   Dtype* top_data = top[0]->mutable_cpu_data();
-  caffe_set(top_count, Dtype(-FLT_MAX), top_data); // FLT_MAX == float max
+  // set the top data as -FLT_MAX
+  caffe_set(top_count, Dtype(-FLT_MAX), top_data);
+  // agrmax_data is for the max data index
   int* argmax_data = max_idx_.mutable_cpu_data();
   caffe_set(top_count, -1, argmax_data);
 
   // For each ROI R = [batch_index x1 y1 x2 y2]: max pool over R
   for (int n = 0; n < num_rois; ++n) {
-    // the output of roi pooling is  num_rois * channels * height * width
-    int roi_batch_ind = bottom_rois[0];  // id
-    // 原图映射到feature map
-    int roi_start_w = round(bottom_rois[1] * spatial_scale_); // start_w
-    int roi_start_h = round(bottom_rois[2] * spatial_scale_); // start_h
-    int roi_end_w = round(bottom_rois[3] * spatial_scale_); // end_w
-    int roi_end_h = round(bottom_rois[4] * spatial_scale_); // end_h
+    int roi_batch_ind = bottom_rois[0]; // index for feature map
+    // spatial_scale is set for ourself , is origin image size /  feature map size = spatial_scale_
+    int roi_start_w = round(bottom_rois[1] * spatial_scale_); // sw
+    int roi_start_h = round(bottom_rois[2] * spatial_scale_); // sh
+    int roi_end_w = round(bottom_rois[3] * spatial_scale_);   // ew
+    int roi_end_h = round(bottom_rois[4] * spatial_scale_);   // eh
+    // 0 <= roi_batch_ind <= batch_size
     CHECK_GE(roi_batch_ind, 0);
     CHECK_LT(roi_batch_ind, batch_size);
-
-    int roi_height = max(roi_end_h - roi_start_h + 1, 1); // region of interst  height
-    int roi_width = max(roi_end_w - roi_start_w + 1, 1);  // ... width
+    // roi height and width
+    int roi_height = max(roi_end_h - roi_start_h + 1, 1);
+    int roi_width = max(roi_end_w - roi_start_w + 1, 1);
+    // bin_size_h, bin_size_w is for computed the region of every pix 
     const Dtype bin_size_h = static_cast<Dtype>(roi_height)
-                             / static_cast<Dtype>(pooled_height_); //  p_h
+                             / static_cast<Dtype>(pooled_height_);
     const Dtype bin_size_w = static_cast<Dtype>(roi_width)
-                             / static_cast<Dtype>(pooled_width_); //p_w
-
+                             / static_cast<Dtype>(pooled_width_);
+    // this roi map to image
     const Dtype* batch_data = bottom_data + bottom[0]->offset(roi_batch_ind);
-
+    // compute all the channels of the image
     for (int c = 0; c < channels_; ++c) {
+      // compute the roi poolinged the feature one pix by one pix
       for (int ph = 0; ph < pooled_height_; ++ph) {
         for (int pw = 0; pw < pooled_width_; ++pw) {
           // Compute pooling region for this output unit:
@@ -93,21 +101,20 @@ void ROIPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
                                            * bin_size_h));
           int wend = static_cast<int>(ceil(static_cast<Dtype>(pw + 1)
                                            * bin_size_w));
-          // iou , hstart hend wstart wend in roi
+
           hstart = min(max(hstart + roi_start_h, 0), height_);
           hend = min(max(hend + roi_start_h, 0), height_);
-          wstart = min(max(wstart + roi_start, 0), width_);
+          wstart = min(max(wstart + roi_start_w, 0), width_);
           wend = min(max(wend + roi_start_w, 0), width_);
 
-          bool is_empty = (hend <= hstart) || (wend <= wstart); // not empty 映射到feature map 中可能会出现empty..
+          bool is_empty = (hend <= hstart) || (wend <= wstart);
 
           const int pool_index = ph * pooled_width_ + pw;
           if (is_empty) {
             top_data[pool_index] = 0;
             argmax_data[pool_index] = -1;
           }
-          // max pooling
-          // find the max  hstart and wstart in feature map location
+
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               const int index = h * width_ + w;
@@ -120,13 +127,12 @@ void ROIPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         }
       }
       // Increment all data pointers by one channel
-      // move the pointer
       batch_data += bottom[0]->offset(0, 1);
       top_data += top[0]->offset(0, 1);
       argmax_data += max_idx_.offset(0, 1);
     }
     // Increment ROI data pointer
-    bottom_rois += bottom[1]->offset(1); // bottom += 5
+    bottom_rois += bottom[1]->offset(1);
   }
 }
 
