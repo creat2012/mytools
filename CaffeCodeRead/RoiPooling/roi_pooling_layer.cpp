@@ -128,7 +128,7 @@ void ROIPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       }
       // Increment all data pointers by one channel
       batch_data += bottom[0]->offset(0, 1);
-      top_data += top[0]->offset(0, 1);
+      top_data += top[0]->offset(0, 1);// num -> num_rois 
       argmax_data += max_idx_.offset(0, 1);
     }
     // Increment ROI data pointer
