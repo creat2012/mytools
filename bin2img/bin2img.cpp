@@ -11,7 +11,6 @@ const int width = 200;  // image 's width
 const int nums = 2; // images 
 int main()
 {
-
     ifstream infile;
     vector<Mat> dict;
     infile.open("InputTensor.bin", ios::binary); // InputTensor is the image's bin file
