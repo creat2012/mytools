@@ -25,21 +25,22 @@ class Net {
  public:
   //  构造函数， 可以从 netparamter 进行生成 net
   //  也可以从文件中 (prototxt) 中进行生成 net
+  //  ? NetParameter
   explicit Net(const NetParameter& param);
   explicit Net(const string& param_file, Phase phase,
       const int level = 0, const vector<string>* stages = NULL);
   virtual ~Net() {} // 析构函数
 
   /// @brief Initialize a network with a NetParameter.
-  void Init(const NetParameter& param);
+  void Init(const NetParameter& param); // 用 netparamters来初始化一个net
 
   /**
    * @brief Run Forward and return the result.
    *
    */
-  const vector<Blob<Dtype>*>& Forward(Dtype* loss = NULL);
+  const vector<Blob<Dtype>*>& Forward(Dtype* loss = NULL); // 网络进行forword
   /// @brief DEPRECATED; use Forward() instead.
-  const vector<Blob<Dtype>*>& ForwardPrefilled(Dtype* loss = NULL) {
+  const vector<Blob<Dtype>*>& ForwardPrefilled(Dtype* loss = NULL) { // 老版本的forward
     LOG_EVERY_N(WARNING, 1000) << "DEPRECATED: ForwardPrefilled() "
         << "will be removed in a future version. Use Forward().";
     return Forward(loss);
@@ -53,17 +54,20 @@ class Net {
    * the middle may be incorrect if all of the layers of a fan-in are not
    * included.
    */
+  // 向前传播的几种形式，存在不必要性？
+  //
   Dtype ForwardFromTo(int start, int end);
   Dtype ForwardFrom(int start);
   Dtype ForwardTo(int end);
   /// @brief DEPRECATED; set input blobs then use Forward() instead.
   const vector<Blob<Dtype>*>& Forward(const vector<Blob<Dtype>* > & bottom,
-      Dtype* loss = NULL);
+      Dtype* loss = NULL); // 确定输入blob ， 返回输出blob
 
   /**
    * @brief Zeroes out the diffs of all net parameters.
    *        Should be run before Backward.
    */
+  //清零所有的diff域， 用来？
   void ClearParamDiffs();
 
   /**
@@ -71,6 +75,7 @@ class Net {
    * computes the gradient w.r.t the parameters, and the data has already been
    * provided during the forward pass.
    */
+  // net的反向传播
   void Backward();
   void BackwardFromTo(int start, int end);
   void BackwardFrom(int start);
@@ -121,11 +126,11 @@ class Net {
   /// @brief Writes the net to an HDF5 file.
   void ToHDF5(const string& filename, bool write_diff = false) const;
 
-  /// @brief returns the network name. 返回net的名称
+  /// @brief returns the network name.
   inline const string& name() const { return name_; }
-  /// @brief returns the layer names 返回层的名称
+  /// @brief returns the layer names
   inline const vector<string>& layer_names() const { return layer_names_; }
-  /// @brief returns the blob names 
+  /// @brief returns the blob names
   inline const vector<string>& blob_names() const { return blob_names_; }
   /// @brief returns the blobs
   inline const vector<shared_ptr<Blob<Dtype> > >& blobs() const {
@@ -276,44 +281,44 @@ class Net {
   void UpdateDebugInfo(const int param_id);
 
   /// @brief The network name
-  string name_; // net name
+  string name_;
   /// @brief The phase: TRAIN or TEST
-  Phase phase_; // 该网络结构用来 train 还是 test
+  Phase phase_;
   /// @brief Individual layers in the net
-  vector<shared_ptr<Layer<Dtype> > > layers_; // net 中出现的所有 layer, 是一个个的layer实例
-  vector<string> layer_names_;  // net 中出现的所有 layer的名称, 是一个个string
-  map<string, int> layer_names_index_;  // net 中 layers 的名称和索引的映射
-  vector<bool> layer_need_backward_;  // 记录每个layer 是否需要反向传播
+  vector<shared_ptr<Layer<Dtype> > > layers_;
+  vector<string> layer_names_;
+  map<string, int> layer_names_index_;
+  vector<bool> layer_need_backward_;
   /// @brief the blobs storing intermediate results between the layer.
-  vector<shared_ptr<Blob<Dtype> > > blobs_; // net中的所有blob ？
-  vector<string> blob_names_; // net 中所有 blob的名称
-  map<string, int> blob_names_index_; // 记录net中所有blob 名称和索引的对应
-  vector<bool> blob_need_backward_;   // 记录net中所有blob是否需要反向传播
+  vector<shared_ptr<Blob<Dtype> > > blobs_;
+  vector<string> blob_names_;
+  map<string, int> blob_names_index_;
+  vector<bool> blob_need_backward_;
   /// bottom_vecs stores the vectors containing the input for each layer.
   /// They don't actually host the blobs (blobs_ does), so we simply store
   /// pointers.
-  vector<vector<Blob<Dtype>*> > bottom_vecs_; // 记录每个layer的输入blob ,  只是记录了指针	
-  vector<vector<int> > bottom_id_vecs_;       // 用于定位每个layer的输入blob在blobs_中的位置
-  vector<vector<bool> > bottom_need_backward_; // 标识每个输入blob是否需要反向传播
+  vector<vector<Blob<Dtype>*> > bottom_vecs_;
+  vector<vector<int> > bottom_id_vecs_;
+  vector<vector<bool> > bottom_need_backward_;
   /// top_vecs stores the vectors containing the output for each layer
-  vector<vector<Blob<Dtype>*> > top_vecs_; // 输出blob
+  vector<vector<Blob<Dtype>*> > top_vecs_;
   vector<vector<int> > top_id_vecs_;
   /// Vector of weight in the loss (or objective) function of each net blob,
   /// indexed by blob_id.
-  vector<Dtype> blob_loss_weights_; // 每个blob 对全局损失函数的贡献权重
+  vector<Dtype> blob_loss_weights_;
   vector<vector<int> > param_id_vecs_;
   vector<int> param_owners_;
   vector<string> param_display_names_;
   vector<pair<int, int> > param_layer_indices_;
   map<string, int> param_names_index_;
-  /// blob indices for the input and the output of the net  网络输入输出索引
+  /// blob indices for the input and the output of the net
   vector<int> net_input_blob_indices_;
   vector<int> net_output_blob_indices_;
   vector<Blob<Dtype>*> net_input_blobs_;
   vector<Blob<Dtype>*> net_output_blobs_;
-  /// The parameters in the network.  
-  vector<shared_ptr<Blob<Dtype> > > params_; // 网络权值
-  vector<Blob<Dtype>*> learnable_params_;   // 网络可训练权值
+  /// The parameters in the network.
+  vector<shared_ptr<Blob<Dtype> > > params_;
+  vector<Blob<Dtype>*> learnable_params_;
   /**
    * The mapping from params_ -> learnable_params_: we have
    * learnable_param_ids_.size() == params_.size(),
@@ -323,22 +328,22 @@ class Net {
    */
   vector<int> learnable_param_ids_;
   /// the learning rate multipliers for learnable_params_
-  vector<float> params_lr_; // 学习速率 北辰因子
+  vector<float> params_lr_;
   vector<bool> has_params_lr_;
   /// the weight decay multipliers for learnable_params_
   vector<float> params_weight_decay_;
   vector<bool> has_params_decay_;
   /// The bytes of memory used by this net
-  size_t memory_used_;  // 记录网络占用内存多少
+  size_t memory_used_;
   /// Whether to compute and display debug info for the net.
-  bool debug_info_; // 是否显示调试信息 
-  // Callbacksa ? 
+  bool debug_info_;
+  // Callbacks
   vector<Callback*> before_forward_;
   vector<Callback*> after_forward_;
   vector<Callback*> before_backward_;
   vector<Callback*> after_backward_;
 
-DISABLE_COPY_AND_ASSIGN(Net); // 禁用拷贝构造函数/ 赋值运算函数
+DISABLE_COPY_AND_ASSIGN(Net);
 };
 
 

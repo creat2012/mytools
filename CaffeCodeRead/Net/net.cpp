@@ -28,9 +28,9 @@ template <typename Dtype>
 Net<Dtype>::Net(const string& param_file, Phase phase,
     const int level, const vector<string>* stages) {
   NetParameter param;
-  ReadNetParamsFromTextFileOrDie(param_file, &param);
+  ReadNetParamsFromTextFileOrDie(param_file, &param); // 从文件中读取网络参数
   // Set phase, stages and level
-  param.mutable_state()->set_phase(phase);
+  param.mutable_state()->set_phase(phase); // 指定网络为 train 还是 test
   if (stages != NULL) {
     for (int i = 0; i < stages->size(); i++) {
       param.mutable_state()->add_stage((*stages)[i]);
@@ -41,9 +41,9 @@ Net<Dtype>::Net(const string& param_file, Phase phase,
 }
 
 template <typename Dtype>
-void Net<Dtype>::Init(const NetParameter& in_param) {
+void Net<Dtype>::Init(const NetParameter& in_param) { // 归根到底，还是在这个函数中进行net的初始化
   // Set phase from the state.
-  phase_ = in_param.state().phase();
+  phase_ = in_param.state().phase(); // 从状态中解析  ?????
   // Filter layers based on their include/exclude rules and
   // the current NetState.
   NetParameter filtered_param;
