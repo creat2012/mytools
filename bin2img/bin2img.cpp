@@ -6,14 +6,14 @@
 using namespace std;
 using namespace cv;
 
-const int height = 200; // image 's height
-const int width = 200;  // image 's width
-const int nums = 2; // images 
+const int height = 28; // image 's height
+const int width = 28;  // image 's width
+const int nums = 1; // images 
 int main()
 {
     ifstream infile;
     vector<Mat> dict;
-    infile.open("InputTensor.bin", ios::binary); // InputTensor is the image's bin file
+    infile.open("./InputTensor.bin", ios::binary); // InputTensor is the image's bin file
     Mat img = Mat::zeros(height, width, CV_8UC3);
     
 	for (int num = 0; num < nums; num++)
