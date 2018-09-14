@@ -19,12 +19,13 @@ class Npy2bin(object):
 	def trans(self):
 		data = np.load(self.npy_path_)
 		data = np.array(data)
+		## type is float16 in bin file
 		data.astype(np.float16).tofile(self.bin_file_)
 		logging.info("done for to %s :)"%(self.bin_file_))
 
 if __name__ == '__main__':
 	if len(sys.argv) <= 1:
-		logging.error("please appoint the file you will transform in command line!\n")
+		logging.error("pathlease appoint the file you will transform in command line!\n")
 	else:
 		npy_file = sys.argv[1]
 		bin_file = sys.argv[2]
