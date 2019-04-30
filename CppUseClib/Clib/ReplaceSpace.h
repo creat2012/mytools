@@ -1,0 +1,3 @@
+
+
+void ReplaceSpace(char*, int);
